@@ -19,37 +19,39 @@ class PostController extends Controller
         $post->setCover($request);
         return response()->json([
             'success' => true,
-            'post' => $post
+            'post' => $post->refresh()
         ]);
     }
 
     public function updateNews(Request $request, Subpage $subpage, NewsPost $post)
     {
-        $post->update($this->newsValidate($request, $subpage));
+        $post->update($this->newsValidate($request, $subpage, $post->id));
         $post->setCover($request);
         return response()->json([
             'success' => true,
-            'post' => $post
+            'post' => $post->refresh()
         ]);
     }
 
     public function storeBook(Request $request, Subpage $subpage)
     {
-        $post = $subpage->bookPosts()->create($this->bookValidate($request, $subpage));
+        $post = $subpage->books()->create($this->bookValidate($request, $subpage));
         $post->setCover($request);
+        $post->setPdf($request);
         return response()->json([
             'success' => true,
-            'post' => $post
+            'post' => $post->refresh()
         ]);
     }
 
     public function updateBook(Request $request, Subpage $subpage, BookPost $post)
     {
-        $post->update($this->bookValidate($request, $subpage));
+        $post->update($this->bookValidate($request, $subpage, $post->id));
         $post->setCover($request);
+        $post->setPdf($request);
         return response()->json([
             'success' => true,
-            'post' => $post
+            'post' => $post->refresh()
         ]);
     }
 
@@ -67,43 +69,39 @@ class PostController extends Controller
         ]);
     }
 
-    private function newsValidate(Request $request, $subpage)
+    private function newsValidate(Request $request, $subpage, $post = -1)
     {
-        $attr = $request->validate([
+        return $request->validate([
             'title' => [
                 'required',
                 'string',
                 Rule::unique('news_posts')->where(function($query) use($subpage) {
                     return $query->where('subpage_id', $subpage->id);
-                }),
+                })->ignore($post),
                 Rule::unique('book_posts')->where(function($query) use($subpage) {
                     return $query->where('subpage_id', $subpage->id);
-                })
+                })->ignore($post)
             ],
-            'body' => ['required', 'string']
+            'body' => ['string']
         ]);
-        $attr['slug'] = Str::slug($attr['title'], '-');
-        return $attr;
     }
 
-    private function bookValidate(Request $request, $subpage)
+    private function bookValidate(Request $request, $subpage, $post = -1)
     {
-        $attr = $request->validate([
+        return $request->validate([
             'title' => [
                 'required',
                 'string',
                 Rule::unique('news_posts')->where(function($query) use($subpage) {
                     return $query->where('subpage_id', $subpage->id);
-                }),
+                })->ignore($post),
                 Rule::unique('book_posts')->where(function($query) use($subpage) {
                     return $query->where('subpage_id', $subpage->id);
-                })
+                })->ignore($post)
             ],
             'author' => 'required|string',
-            'city' => 'nullable',
-            'year' => 'nullable'
+            'city' => 'nullable|string',
+            'year' => 'nullable|string'
         ]);
-        $attr['slug'] = Str::slug($attr['title'], '-');
-        return $attr;
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Image;
 use App\NewsPost;
 use App\Subpage;
 use Illuminate\Http\UploadedFile;
@@ -16,19 +17,11 @@ class NewsPostTest extends TestCase
 {
     use RefreshDatabase, WithFaker;
 
-    private function generateSubpage($name = 'news')
-    {
-        $response = $this->json('POST', '/', [
-            'name' => $name
-        ]);
-        $response->assertOk();
-        return $response->status() === 200 ? $response->json('subpage.slug') : null;
-    }
     private function generatePost($withCover = false, $coverType = 'file')
     {
         $post = [
-            'title' => $this->faker->asciify('********************'),
-            'body' => $this->faker->sentence
+            'title' => $this->faker->sentence,
+            'body' => $this->faker->paragraph
         ];
         if($withCover) {
             if($coverType === 'url') {
@@ -48,9 +41,9 @@ class NewsPostTest extends TestCase
     /** @test */
     public function a_nP_can_be_created()
     {
-        $subpage = $this->generateSubpage();
+        $subpage = factory('App\Subpage')->create();
         $post = $this->generatePost();
-        $response = $this->json('POST','/'.$subpage.'/news', $post);
+        $response = $this->json('POST','/'.$subpage->slug.'/n', $post);
         $response->assertOk()->assertJson([
             'success' => true,
             'post' => $post
@@ -99,11 +92,11 @@ class NewsPostTest extends TestCase
     /** @test */
     public function a_nP_can_be_created_with_cover_from_file()
     {
-        $subpage = $this->generateSubpage();
+        $subpage = factory('App\Subpage')->create();
         $post = $this->generatePost(true, 'file');
         $file = $post['coverFile'];
 
-        $response = $this->json('POST','/'.$subpage.'/news', $post);
+        $response = $this->json('POST','/'.$subpage->slug.'/n', $post);
         $response->assertOk();
         Storage::disk('public')->assertExists('covers/'.$file->hashName());
         $response->assertJson([
@@ -116,7 +109,7 @@ class NewsPostTest extends TestCase
         $this->assertCount(1, NewsPost::all());
         $this->assertEquals($post['title'], NewsPost::first()->title);
         $this->assertEquals(NewsPost::first(), Subpage::first()->posts()->first());
-        return $response->json('post.url');
+        return NewsPost::first();
     }
 
     /** @test */
@@ -126,7 +119,7 @@ class NewsPostTest extends TestCase
         $newPost = $this->generatePost(true, 'file');
         $file = $newPost['coverFile'];
 
-        $response = $this->json('PATCH', $oldPost, $newPost);
+        $response = $this->json('PATCH', $oldPost->url, $newPost);
         $response->assertOk();
         Storage::disk('public')->assertExists('covers/'.$file->hashName());
         $response->assertJson([
@@ -144,9 +137,9 @@ class NewsPostTest extends TestCase
     /** @test */
     public function a_nP_can_be_created_with_cover_from_url()
     {
-        $subpage = $this->generateSubpage();
+        $subpage = factory('App\Subpage')->create();
         $post = $this->generatePost(true, 'url');
-        $response = $this->json('POST','/'.$subpage.'/news', $post);
+        $response = $this->json('POST','/'.$subpage->slug.'/n', $post);
         $response->assertOk();
         Storage::disk('public')->assertExists(NewsPost::first()->cover->url);
         $response->assertJson([
@@ -223,33 +216,52 @@ class NewsPostTest extends TestCase
     }
 
     /** @test */
+    public function a_cover_can_be_removed_from_nP()
+    {
+        $post = $this->a_nP_can_be_created_with_cover_from_file();
+        $this->assertCount(1, Image::all());
+        $response = $this->json('PATCH', $post->url, [
+            'title' => $post['title'],
+            'removeCover' => true,
+        ]);
+        $this->assertNotInstanceOf(Image::class, NewsPost::first()->cover);
+        $response->assertOk()->assertJson([
+            'success' => true,
+            'post' => [
+                'title' => $post['title'],
+                'cover' => null
+            ]
+        ]);
+    }
+
+    /** @test */
     public function a_nP_cannot_be_created_with_both_covers()
     {
-        $subpage = $this->generateSubpage();
+        $subpage = factory('App\Subpage')->create();
         $post = $this->generatePost(true, 'all');
-        $response = $this->json('POST', '/'.$subpage.'/news', $post);
+        $response = $this->json('POST', '/'.$subpage->slug.'/n', $post);
         $response->assertStatus(422)->assertJsonValidationErrors(['coverFile', 'coverUrl']);
     }
 
     /** @test */
     public function a_nP_cannot_have_duplicates()
     {
-        $subpage = $this->generateSubpage();
+        $subpage = factory('App\Subpage')->create();
         $post = $this->generatePost();
 
-        $response = $this->json('POST', '/'.$subpage.'/news', $post);
+        $response = $this->json('POST', '/'.$subpage->slug.'/n', $post);
         $response->assertOk()->assertJson([
             'success' => true,
             'post' => $post
         ]);
         $this->assertCount(1, NewsPost::all());
 
-        $response = $this->json('POST', '/'.$subpage.'/news', $post);
+        $response = $this->json('POST', '/'.$subpage->slug.'/n', $post);
         $response->assertStatus(422)->assertJsonValidationErrors(['title']);
         $this->assertCount(1, NewsPost::all());
 
-        $post['title'] = $this->faker->asciify('********************');
-        $response = $this->json('POST', '/'.$subpage.'/news', $post);
+        $post['title'] = $this->faker->sentence;
+        $response = $this->json('POST', '/'.$subpage->slug.'/n', $post);
         $response->assertOk()->assertJson([
             'success' => true,
             'post' => $post

@@ -19,7 +19,6 @@ class SubpageController extends Controller
     public function store(Request $request)
     {
         $attr = $this->validation($request);
-        $attr['slug'] = Str::slug($attr['name'], '-');
         $subpage = Subpage::create($attr);
         return response()->json([
             'success' => true,
@@ -50,8 +49,7 @@ class SubpageController extends Controller
     public function update(Request $request, Subpage $subpage)
     {
         $attr = $this->validation($request);
-        $attr['slug'] = Str::slug($attr['name'], '-');
-        $subpage->update($attr);
+        $subpage = $subpage->update($attr);
         return response()->json([
             'success' => true,
             'subpage' => $subpage

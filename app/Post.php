@@ -5,6 +5,8 @@ namespace App;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 abstract class Post extends Model
@@ -12,6 +14,22 @@ abstract class Post extends Model
     protected $guarded = [];
     protected $with = ['cover'];
     protected $appends = ['type', 'url', 'subpageUrl'];
+
+    protected static function boot() {
+        parent::boot();
+
+        static::creating(function ($question) {
+            $question->slug = Str::slug($question->title, '-');
+        });
+
+        static::updating(function ($question) {
+            $question->slug = Str::slug($question->title, '-');
+        });
+
+        static::saving(function ($question) {
+            $question->slug = Str::slug($question->title, '-');
+        });
+    }
 
     public function getRouteKeyName()
     {
@@ -30,13 +48,18 @@ abstract class Post extends Model
 
     public function setCover(Request $request)
     {
+        if($request->has('removeCover')) {
+            Storage::disk('public')->delete($this->cover->url);
+            Image::destroy($this->cover->id);
+            $this->save();
+        }
         if($request->has('coverFile') && $request->has('coverUrl')) {
             throw ValidationException::withMessages([
                 'coverFile' => 'can\'t exists with coverUrl',
                 'coverUrl' => 'can\'t exists with coverFile'
             ]);
         }
-        if($request->has('coverFile')) {
+        else if($request->has('coverFile')) {
             $file = $request->file('coverFile');
             $url = $file->store('covers', 'public');
             return $this->cover()->updateOrCreate(['url' => $url]);
@@ -83,7 +106,8 @@ abstract class Post extends Model
 
     public function getUrlAttribute()
     {
-        return '/'.$this->subpage->slug.'/'.$this->slug;
+        $type = strtolower(substr($this->getTypeAttribute(),4, 1));
+        return '/'.$this->subpage->slug.'/'.$type.'/'.$this->slug;
     }
 
     public function getSubpageUrlAttribute()

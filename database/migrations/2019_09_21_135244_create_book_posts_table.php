@@ -21,7 +21,7 @@ class CreateBookPostsTable extends Migration
             $table->text('city')->nullable();
             $table->text('year')->nullable();
             $table->text('pdf')->nullable();
-            $table->unsignedBigInteger('subpage_id');
+            $table->unsignedBigInteger('subpage_id')->nullable();
             $table->timestamps();
 
             $table->foreign('subpage_id')->references('id')->on('subpages')->onDelete('cascade');

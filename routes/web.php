@@ -16,12 +16,19 @@ Route::get('/', function () {
     return $subpages;
 });
 
+
+
+Route::post('/{subpage}/n', 'PostController@storeNews');
+Route::patch('/{subpage}/n/{post}', 'PostController@updateNews');
+Route::get('/{subpage}/n/{post}', 'PostController@show');
+Route::delete('/{subpage}/n/{post}', 'PostController@destroy');
+
+Route::post('/{subpage}/b', 'PostController@storeBook');
+Route::patch('/{subpage}/b/{post}', 'PostController@updateBook');
+Route::get('/{subpage}/b/{post}', 'PostController@show');
+Route::delete('/{subpage}/b/{post}', 'PostController@destroy');
+
 Route::get('/{subpage}', 'SubpageController@show');
 Route::post('/', 'SubpageController@store');
 Route::patch('/{subpage}', 'SubpageController@update');
 Route::delete('/{subpage}', 'SubpageController@destroy');
-
-Route::get('/{subpage}/{post}', 'PostController@show');
-Route::post('/{subpage}/news', 'PostController@storeNews');
-Route::patch('/{subpage}/{post}', 'PostController@updateNews');
-Route::delete('/{subpage}/{post}', 'PostController@destroy');

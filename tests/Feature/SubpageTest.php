@@ -15,13 +15,16 @@ class SubpageTest extends TestCase
     /** @test */
     public function a_subpage_can_be_created()
     {
-        $name = 'Tytuł testowy';
+        $name = $this->faker->sentence;
         $response = $this->json('POST', '/', [
             'name' => $name
         ]);
         $response->assertOk()->assertJson([
             'success' => true,
-            'subpage' => ['name' => $name]
+            'subpage' => [
+                'name' => $name,
+                'slug' => Str::slug($name, '-')
+            ]
         ]);
         $this->assertCount(1, Subpage::all());
     }
@@ -29,26 +32,17 @@ class SubpageTest extends TestCase
     /** @test */
     public function a_subpage_can_be_updated()
     {
-        $oldName = "Stara nazwa";
-        $newName = "Nowa nazwa";
-        $response = $this->json('POST','/', [
-            'name' => $oldName
-        ]);
-        $response->assertOk()->assertJson([
-            'success' => true,
-            'subpage' => ['name' => $oldName]
-        ]);
-        $this->assertCount(1, Subpage::all());
+        $subpage = factory('App\Subpage')->create();
+        $name = $this->faker->sentence;
 
-        $slug = $response->json('subpage.slug');
-        $response = $this->json('PATCH','/'.$slug, [
-            'name' => $newName
+        $response = $this->json('PATCH','/'.$subpage->slug, [
+            'name' => $name
         ]);
         $response->assertOk()->assertJson([
             'success' => true,
             'subpage' => [
-                'name' => $newName,
-                'slug' => Str::slug($newName, '-')
+                'name' => $name,
+                'slug' => Str::slug($name, '-')
             ]
         ]);
         $this->assertCount(1, Subpage::all());
@@ -57,37 +51,20 @@ class SubpageTest extends TestCase
     /** @test */
     public function a_subpage_can_be_deleted()
     {
-        $name = 'Tytuł testowy';
-        $response = $this->json('POST','/', [
-            'name' => $name
-        ]);
-        $response->assertOk()->assertJson([
-            'success' => true,
-            'subpage' => ['name' => $name]
-        ]);
-        $this->assertCount(1, Subpage::all());
-
-        $slug = $response->json('subpage.slug');
-        $response = $this->json('DELETE','/'.$slug);
+        $subpage = factory('App\Subpage')->create();
+        $response = $this->json('DELETE','/'.$subpage->slug);
         $response->assertOk()->assertJson([
             'success' => true
         ]);
         $this->assertCount(0, Subpage::all());
+        $this->json('GET', '/'.$subpage->slug)->assertStatus(404);
     }
 
     /** @test */
     public function a_subpage_cannot_have_duplicates()
     {
-        $name = 'Tytuł testowy 2';
-
-        $response = $this->json('POST', '/', ['name' => $name]);
-        $response->assertOk()->assertJson([
-            'success' => true,
-            'subpage' => ['name' => $name]
-        ]);
-        $this->assertCount(1, Subpage::all());
-
-        $response = $this->json('POST', '/', ['name' => $name]);
+        $subpage = factory('App\Subpage')->create();
+        $response = $this->json('POST', '/', ['name' => $subpage->name]);
         $response->assertStatus(422);
         $this->assertCount(1, Subpage::all());
     }

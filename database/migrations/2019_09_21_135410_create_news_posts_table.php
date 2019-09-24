@@ -17,8 +17,8 @@ class CreateNewsPostsTable extends Migration
             $table->bigIncrements('id');
             $table->text('slug');
             $table->text('title');
-            $table->longText('body');
-            $table->unsignedBigInteger('subpage_id');
+            $table->longText('body')->nullable();
+            $table->unsignedBigInteger('subpage_id')->nullable();
             $table->timestamps();
 
             $table->foreign('subpage_id')->references('id')->on('subpages')->onDelete('cascade');
