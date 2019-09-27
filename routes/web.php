@@ -16,12 +16,11 @@ Route::get('/', function () {
     return $subpages;
 });
 
-
-
 Route::post('/{subpage}/n', 'PostController@storeNews');
 Route::patch('/{subpage}/n/{post}', 'PostController@updateNews');
 Route::get('/{subpage}/n/{post}', 'PostController@show');
 Route::delete('/{subpage}/n/{post}', 'PostController@destroy');
+Route::post('/{subpage}/n/{post}/gallery', 'GalleryController@store');
 
 Route::post('/{subpage}/b', 'PostController@storeBook');
 Route::patch('/{subpage}/b/{post}', 'PostController@updateBook');

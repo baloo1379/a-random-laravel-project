@@ -36,8 +36,24 @@ use Illuminate\Http\Request;
  */
 class NewsPost extends Post
 {
+    protected $appends = ['type', 'url', 'gallery'];
+
     public function galleries()
     {
         return $this->morphMany('App\Gallery', 'gallerable');
+    }
+
+    public function getGalleryAttribute()
+    {
+        $images = collect();
+        $this ->galleries()->get()->each(function ($gallery) use ($images){
+            $tempImages = collect();
+            $gallery->images()->each(function($image) use ($tempImages){
+                $tempImages->push($image->url);
+            });
+
+            $images->push(collect($gallery)->put('images', $tempImages));
+        });
+        return $images;
     }
 }

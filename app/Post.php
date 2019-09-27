@@ -13,7 +13,7 @@ abstract class Post extends Model
 {
     protected $guarded = [];
     protected $with = ['cover'];
-    protected $appends = ['type', 'url', 'subpageUrl'];
+    protected $appends = ['type', 'url'];
 
     protected static function boot() {
         parent::boot();
@@ -108,10 +108,5 @@ abstract class Post extends Model
     {
         $type = strtolower(substr($this->getTypeAttribute(),4, 1));
         return '/'.$this->subpage->slug.'/'.$type.'/'.$this->slug;
-    }
-
-    public function getSubpageUrlAttribute()
-    {
-        return '/'.$this->subpage->slug;
     }
 }

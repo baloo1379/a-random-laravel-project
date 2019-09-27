@@ -6,8 +6,10 @@ use App\NewsPost;
 use Faker\Generator as Faker;
 
 $factory->define(NewsPost::class, function (Faker $faker) {
+    $subpage = factory('App\Subpage')->create();
     return [
         'title' => $faker->sentence,
-        'body' => $faker->paragraph
+        'body' => $faker->paragraph,
+        'subpage_id' => $subpage->id
     ];
 });
